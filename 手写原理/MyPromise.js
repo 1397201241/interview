@@ -39,11 +39,24 @@ class MyPromise {
   }
 
   #handler = [];
-  #runOne(fn, resolve, reject) {
+  #runOne(callback, resolve, reject) {
+    // 传入的不是一个回调函数，则传递上一个Promise
+    if (typeof callback !== "function") {
+      const settled = this.#state === FULFILLED
+        ? resolve : reject;
+      settled(this.#result);
+      return;
+    }
+    // 回调函数的返回
     try {
-      let onFulfilledHandlerType = Object.prototype.toString.call(fn).slice(8, -1);
-      let res = onFulfilledHandlerType === "Function" ? fn(this.#result) : this.#result;
-      resolve(res);
+      const data = callback(this.#result);
+      // 回调函数返回的是一个Promise对象
+      // todo:判断一个对象满不满足Promise A+规范
+      if (data && data.then) {
+        data.then(resolve, reject);
+      } else {
+        resolve(data);
+      }
     } catch (e) {
       reject(e);
     }
@@ -60,6 +73,7 @@ class MyPromise {
     }
   }
   // 原型方法，需要实例化
+  // 返回一个新的Promise，并在上一个Promise状态敲定的时候执行对应的回调处理函数，并敲定新的Promise对象的状态
   then(onFulfilledHandler = undefined, onRejectedHandler = undefined) {
     return new MyPromise((resolve, reject) => {
       this.#handler.push({onFulfilledHandler, onRejectedHandler, resolve, reject});
@@ -77,10 +91,13 @@ let p1 = new MyPromise((resolve, reject) => {
     resolve(1);
   })
 })
-p1.then(22).then(res => {
+p1.then(22)
+  .then(res => {
+  console.log(res, "res")
   throw 232;
-}).catch(e => {
-  console.log(e);
-}).then(res => {
-  console.log(res);
-})
+}).then(1, (res) => {
+  console.log(res, "失败了");
+  // return "hello";
+}).then( (res) => {
+    console.log(res, "默认");
+  })
