@@ -1,6 +1,6 @@
 // 实现 (a == 1 && a == 2 && a == 3) 为true
 
-// 利用对象隐式转换时调用toString()方法的特性
+// 重写toString方法，利用对象隐式转换时调用toString()方法的特性
 let a = {
   i: 1,
   toString() {
